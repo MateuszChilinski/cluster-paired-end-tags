@@ -11,7 +11,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefm
 
 def add_build_args(parser):
     parser.add_argument("--pets_filename", type=str, action='append',
-                        default=["~/BioData/4DNUCLEOME/4DNFI2BAXOSW_GM12878_CTCF_rep1_hiseq.bedpe"],
                         help=".bedpe files containing raw PETs (no header)")
     parser.add_argument("--clusters_filename", type=str,
                         default="~/BioData/chromatin_loops/4DNFI2BAXOSW_GM12878_CTCF_rep1_hiseq.bedpe.25.2.6.clusters",
@@ -162,6 +161,11 @@ def main():
     parser = argparse.ArgumentParser()
     add_build_args(parser)
     args = parser.parse_args()
+    default_pets_filename=["~/BioData/4DNUCLEOME/4DNFI2BAXOSW_GM12878_CTCF_rep1_hiseq.bedpe"]
+    try:
+        parser.pets_filename
+    except AttributeError: 
+        parser.pets_filename = default_pets_filename
     cluster_PETs(args)
 
 

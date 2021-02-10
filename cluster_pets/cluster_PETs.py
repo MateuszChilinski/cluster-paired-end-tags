@@ -141,7 +141,7 @@ def cluster_PETs(args):
                                      "end2": end2s[i][orders[i]],
                                      "cnt": cnts[i][orders[i]]})])
     pets = pets[pets.cnt >= args.cluster_cutoff]
-    if peaks:
+    if peaks and len(pets) > 0::
         pets["Center1"] = pets.apply(lambda row: peaks.iloc[
                             peaks[(peaks.Chromosome == row.chrom1) &
                                   (((peaks.Start >= row.start1) & (peaks.Start < row.end1)) |

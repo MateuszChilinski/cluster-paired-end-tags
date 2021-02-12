@@ -11,12 +11,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefm
 
 def add_build_args(parser):
     parser.add_argument("--pets_filename", type=str, action='append',
-                        default=["~/BioData/4DNUCLEOME/4DNFI2BAXOSW_GM12878_CTCF_rep1_hiseq.bedpe"],
+                        default=[],
                         help=".bedpe files containing raw PETs (no header)")
     parser.add_argument("--clusters_filename", type=str,
                         default="~/BioData/chromatin_loops/4DNFI2BAXOSW_GM12878_CTCF_rep1_hiseq.bedpe.25.2.6.clusters",
                         help=".bedpe output file with clustered PETs (no header)")
-    parser.add_argument("--peaks_filename", type=str, default="~/BioData/ENCODE/ENCFF536RGD.bed",
+    parser.add_argument("--peaks_filename", type=str,
                         help="Peaks which must intersect with PETs to be considered during clustering (.bed file)")
     parser.add_argument("--self_ligation", type=int, default=8000, help="Self-ligation genomic span (default: 8000)")
     parser.add_argument("--extension", type=int, default=25,
@@ -60,6 +60,7 @@ def cluster_PETs(args):
     pets.end2 = pets.end2 + args.extension
 
     # remove not intersecting anchors
+    peaks = None
     if args.peaks_filename:
         peaks = pd.read_csv(args.peaks_filename, sep="\t", header=None, usecols=[0, 1, 2, 6],
                             names=["Chromosome", "Start", "End", "Score"])
@@ -141,16 +142,14 @@ def cluster_PETs(args):
                                      "end2": end2s[i][orders[i]],
                                      "cnt": cnts[i][orders[i]]})])
     pets = pets[pets.cnt >= args.cluster_cutoff]
-    if peaks and len(pets) > 0::
+    if peaks is not None and len(pets) > 0:
         pets["Center1"] = pets.apply(lambda row: peaks.iloc[
                             peaks[(peaks.Chromosome == row.chrom1) &
-                                  (((peaks.Start >= row.start1) & (peaks.Start < row.end1)) |
-                                  ((peaks.End >= row.start1) & (peaks.End < row.end1)))]
+                                  (peaks.Start <= row.end1) & (row.start1 <= peaks.End)]
                                  ["Score"].idxmax()]["Center"], axis=1)
         pets["Center2"] = pets.apply(lambda row: peaks.iloc[
                             peaks[(peaks.Chromosome == row.chrom1) &
-                                  (((peaks.Start >= row.start2) & (peaks.Start < row.end2)) |
-                                  ((peaks.End >= row.start2) & (peaks.End < row.end2)))]
+                                  (peaks.Start <= row.end2) & (row.start2 <= peaks.End)]
                                  ["Score"].idxmax()]["Center"], axis=1)
     pets.to_csv(args.clusters_filename, sep="\t", index=False, header=False)
     logging.info(f"Done. Saved {len(pets):,} clusters.")
